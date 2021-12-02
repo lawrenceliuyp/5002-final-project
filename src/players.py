@@ -2,8 +2,8 @@ import time
 
 import pygame
 
-from .board import BoardViewController
-from .mcts import MCTS
+from board import BoardViewController
+from mcts import MCTS
 
 
 class Player:
@@ -43,7 +43,7 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
-    def __init__(self, mat_flag=0, computational_power=5000) -> None:
+    def __init__(self, mat_flag=0, computational_power=50000) -> None:
         super().__init__(mat_flag=mat_flag)
         self.computational_power = computational_power
 

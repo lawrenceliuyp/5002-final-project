@@ -1,7 +1,7 @@
 import pygame
 
-from .board import Board, BoardViewController
-from .players import AIPlayer, HumanPlayer
+from board import Board, BoardViewController
+from players import AIPlayer, HumanPlayer
 
 
 class Game:
@@ -20,7 +20,7 @@ class Game:
         self.board.player = self.current_player.mat_flag
 
         # init ai player
-        self.ai_player = AIPlayer(mat_flag=-1, computational_power=100)
+        self.ai_player = AIPlayer(mat_flag=-1, computational_power=1000)
         self.ai_player.set_board_controller(self.board_controller)
 
         # init game parameters

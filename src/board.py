@@ -45,6 +45,7 @@ class Board:
     def get_has_neighbour_valid_position_by_random(self):
         # 生成子节点的时候选择有棋子的位置
         has_neighbour_position_list = []
+
         for position in self.valid_position:
             if self.has_neighbor(position, 1):
                 has_neighbour_position_list.append(position)
@@ -177,6 +178,7 @@ class BoardViewController:
         is_end, is_win, action_done = False, False, False
         if self.board.board_matrix[position[0]][position[1]] == 0:
             self.board.move_in_position(position=position, player_flag=player_flag)
+            self.board.remove_valid_position(position)
             self.board.last_position = position
             action_done = True
         if action_done:
