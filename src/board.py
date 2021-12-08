@@ -14,6 +14,9 @@ class Board:
             for j in range(size):
                 self.valid_position.append((i, j))
 
+    def set_board_matrix(self, mat):
+        self.board_matrix = mat.copy()
+
     def is_valid_position(self, x, y):
         return 0 <= x < self.size and 0 <= y < self.size
 
@@ -86,31 +89,38 @@ class Board:
 
         # -45度方向
         l1 = [board.diagonal(y - x)]
-        if (l1 == player).sum() >= 5:
-            return True
-        # if len(l1) >= 5:
-        # for i in range(len(l1) - 4):
-        #     count = 0
-        #     for k in range(5):
-        #         if l1[i + k] == player:
-        #             count += 1
-        #     if count >= 5:
-        #         return True
+        # if (l1 == player).sum() >= 5:
+        #     return True
+        if len(l1) >= 5:
+            for i in range(len(l1) - 4):
+                count = 0
+                for k in range(5):
+                    if l1[i + k] == player:
+                        count += 1
+                if count >= 5:
+                    return True
 
         # +45度方向
         l2 = [np.fliplr(board).diagonal(self.size - 1 - y - x)]
-        if (l2 == player).sum() >= 5:
-            return True
+        # if (l2 == player).sum() >= 5:
+        #     return True
         # print(l2)
-        # if len(l2) >= 5:
-        #     for i in range(len(l2) - 4):
-        #         count = 0
-        #         for k in range(5):
-        #             if l2[i + k] == player:
-        #                 count += 1
-        #         if count >= 5:
-        #             return True
+        if len(l2) >= 5:
+            for i in range(len(l2) - 4):
+                count = 0
+                for k in range(5):
+                    if l2[i + k] == player:
+                        count += 1
+                if count >= 5:
+                    return True
         return False
+
+    def reset(self):
+        self.board_matrix = np.zeros((self.size, self.size), dtype=np.int)
+        self.valid_position = [
+            (i, j) for i in range(self.size) for j in range(self.size)
+        ]
+        self.last_position = None
 
     # def cal_score(self, x, y):
     #     shape_score = {(0, 1, 1, 0, 0): 50,
@@ -188,3 +198,7 @@ class BoardViewController:
                 print("winer is:", player_flag)
             self.update_view()
         return action_done, (is_win | is_end)
+
+    def reset(self):
+        self.board.reset()
+        self.draw_view()

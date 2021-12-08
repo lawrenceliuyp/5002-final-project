@@ -1,9 +1,15 @@
+import concurrent.futures
+import random
 import time
 
+import numpy as np
 import pygame
 
+import mcts
 from board import BoardViewController
-from mcts import MCTS
+from minimax import MCTS
+
+# from mcts import MCTS
 
 
 class Player:
@@ -47,6 +53,37 @@ class AIPlayer(Player):
         super().__init__(mat_flag=mat_flag)
         self.computational_power = computational_power
 
+    @classmethod
+    def get_ai_solution(cls, board, computational_power=50000):
+        if np.all((board.board_matrix == 0)):
+            x, y = board.board_matrix.shape
+            return int(x >> 1), int(y >> 1)
+
+        start_time = time.time()
+        first_position_in_MCTS = board.last_position
+        mcts1 = mcts.MCTS(
+            start_time,
+            computational_power,
+            first_position_in_MCTS,
+            board,
+        )
+        mcts2 = MCTS(
+            start_time,
+            computational_power,
+            first_position_in_MCTS,
+            board,
+            board.size,
+        )
+        r = random.randint(1, 100)
+        if r > 100:
+            pos = mcts1.monte_carlo_tree_search().position
+        else:
+            suggestion_pos = mcts2.monte_carlo_tree_search_alpha()
+            l = [-1, -1]
+            l[0], l[1] = suggestion_pos[1], suggestion_pos[0]
+            pos = tuple(l)
+        return pos
+
     def do_action(self, event=None):
         """
         This is the core of the game. Write your code to give the computer the intelligence to play a Five-in-a-Row game
@@ -56,20 +93,19 @@ class AIPlayer(Player):
         output:
             2D matrix representing the updated state of the game.
         """
+        board = self.board_controller.board
+
+        # pos = self.get_ai_solution(board, self.computational_power)
 
         # ai suggestion
-        board = self.board_controller.board
-        start_time = time.time()
-        first_position_in_MCTS = board.last_position
-        mcts = MCTS(
-            start_time,
-            self.computational_power,
-            first_position_in_MCTS,
-            board,
-        )
-        suggested_position = mcts.monte_carlo_tree_search().position
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            future = executor.submit(
+                AIPlayer.get_ai_solution, board, self.computational_power
+            )
+            pos = future.result()
 
         action_done, is_end = self.board_controller.move_in_position(
-            position=suggested_position, player_flag=self.mat_flag
+            position=pos, player_flag=self.mat_flag
         )
+
         return action_done, is_end

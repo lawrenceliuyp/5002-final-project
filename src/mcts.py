@@ -20,8 +20,14 @@ class Node:
         self.children = []
 
     def get_uct(self, factor=np.sqrt(2)):
-        v = (self.num_win - self.num_lose) / self.num_visited if self.num_visited > 0 else 0
-        return v + factor * np.sqrt(np.log(self.parent.num_visited) / (1 + self.num_visited))
+        v = (
+            (self.num_win - self.num_lose) / self.num_visited
+            if self.num_visited > 0
+            else 0
+        )
+        return v + factor * np.sqrt(
+            np.log(self.parent.num_visited) / (1 + self.num_visited)
+        )
 
     def __str__(self):
         return f"{self.parent}-{self.position}"
@@ -154,7 +160,9 @@ class MCTS:
 
         new_board = copy.deepcopy(node.board)  # 得到旧状态的copy
 
-        valid_position_has_neighbour = new_board.get_has_neighbour_valid_position_by_random()
+        valid_position_has_neighbour = (
+            new_board.get_has_neighbour_valid_position_by_random()
+        )
 
         new_board.remove_valid_position(valid_position_has_neighbour)
         new_board.player *= -1  # 与父状态（node)交换下子方
