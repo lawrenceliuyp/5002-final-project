@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import messagebox
+import tkinter.messagebox
 
 import pygame
 

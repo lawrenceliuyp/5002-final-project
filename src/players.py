@@ -6,17 +6,14 @@ import numpy as np
 import pygame
 
 import mcts
-from board import BoardViewController
-from minimax import MCTS
-
-# from mcts import MCTS
+from mcts import MCTS
 
 
 class Player:
     def __init__(self, mat_flag=0) -> None:
         self.mat_flag = mat_flag
 
-    def set_board_controller(self, board_controller: BoardViewController):
+    def set_board_controller(self, board_controller):
         self.board_controller = board_controller
 
     def do_action(self, event=None):
@@ -67,21 +64,7 @@ class AIPlayer(Player):
             first_position_in_MCTS,
             board,
         )
-        mcts2 = MCTS(
-            start_time,
-            computational_power,
-            first_position_in_MCTS,
-            board,
-            board.size,
-        )
-        r = random.randint(1, 100)
-        if r > 100:
-            pos = mcts1.monte_carlo_tree_search().position
-        else:
-            suggestion_pos = mcts2.monte_carlo_tree_search_alpha()
-            l = [-1, -1]
-            l[0], l[1] = suggestion_pos[1], suggestion_pos[0]
-            pos = tuple(l)
+        pos = mcts1.monte_carlo_tree_search().position
         return pos
 
     def do_action(self, event=None):
