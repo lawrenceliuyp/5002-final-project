@@ -4,6 +4,7 @@ import time
 import numpy as np
 
 from board import Board
+from evaluation import Evaluation
 
 
 class Node:
@@ -39,12 +40,16 @@ class MCTS:
         self.fully_size = 8
         self.time = time
         self.computational_power = computational_power
+        self.board_eval = Evaluation(board.size)
 
     def monte_carlo_tree_search(self):
         iter = 0
         self.plays_rave = {}  # key:move, value:visited times
         self.wins_rave = {}  # key:move, value:{player: win times}
+        self.confident = 1.96
+        self.equivalence = 1000
         while self.resources_left(time.time(), iter):
+            self.visited_states = set()
             leaf = self.traverse_alpha(self.root)  # leaf = unvisited node
             simulation_result = self.rollout(leaf)
             self.backpropagate(leaf, simulation_result)
@@ -52,13 +57,17 @@ class MCTS:
 
         print(iter)
         print(time.time() - self.time)
-        return self.best_child_by_prob(self.root)
+
+        res = self.best_child_by_prob(self.root)
+        print("(%d,%d)" % (res.position[0], res.position[1]))
+
+        return res
 
     # For the traverse function, to avoid using up too much time or resources, you may start considering only
     # a subset of children (e.g 5 children). Increase this number or by choosing this subset smartly later.
     def traverse(self, node):
         while self.fully_expanded(node):
-            node = self.best_ucb(node)
+            node = self.best_uct_rave(node)
 
         if not self.non_terminal(node):
 
@@ -70,12 +79,14 @@ class MCTS:
             # in case no children are present / node is terminal
 
     def traverse_alpha(self, node):
+
         while self.fully_expanded(node):
             node = self.best_ucb(node)
         if not self.non_terminal(node):
             return node
 
         else:
+
             return self.pick_univisted_has_neighbour(node)
             # in case no children are present / node is terminal
 
@@ -132,7 +143,7 @@ class MCTS:
         return len(node.children) >= self.fully_size
 
     def resources_left(self, curr_time, iteration):
-        if curr_time - self.time < 4.99 and iteration < self.computational_power:
+        if curr_time - self.time < 4.5 and iteration < self.computational_power:
             return True
         return False
 
@@ -157,20 +168,32 @@ class MCTS:
 
     def pick_univisted_has_neighbour(self, node):  # 生成子状态
         # node.board 对应旧状态
-
+        plays_rave = self.plays_rave
+        wins_rave = self.wins_rave
         new_board = copy.deepcopy(node.board)  # 得到旧状态的copy
-
-        valid_position_has_neighbour = (
-            new_board.get_has_neighbour_valid_position_by_random()
-        )
-
-        new_board.remove_valid_position(valid_position_has_neighbour)
         new_board.player *= -1  # 与父状态（node)交换下子方
-        new_board.move_in_position(valid_position_has_neighbour, new_board.player)
-        child = Node(
-            parent=node, position=valid_position_has_neighbour, board=new_board
-        )
+        gen_move = self.board_eval.genmove(new_board, new_board.player)
+        if isinstance(gen_move, list):
+            gen_move = gen_move[0]
+        pos = [gen_move[2], gen_move[1]]
+        pos = tuple(pos)
+        # valid_position_has_neighbour = new_board.get_has_neighbour_valid_position_by_random()
+
+        new_board.remove_valid_position(pos)
+
+        new_board.move_in_position(pos, new_board.player)
+        child = Node(parent=node, position=pos, board=new_board)
         node.children.append(child)
+        move = child.position
+        player = child.board.player
+        if move not in plays_rave:
+            plays_rave[move] = 0
+        if move in wins_rave:
+            wins_rave[move][player] = 0
+        else:
+            wins_rave[move] = {player: 0}
+
+        self.visited_states.add((player, move))
         return child
 
     def pick_random(self, node: Node):  # 随机下子并生成状态
@@ -201,10 +224,40 @@ class MCTS:
         return node.children[best_index]
 
     def result(self, node):
+        plays_rave = self.plays_rave
+        wins_rave = self.wins_rave
         board = node.board
         node_position = node.position
         if board.is_win(node_position):
+            winner = board.player
+            for player, move in self.visited_states:
+                if move in plays_rave:
+                    plays_rave[move] += 1  # no matter which player
+                    if winner in wins_rave[move]:
+                        wins_rave[move][winner] += 1  # each move and every player
             return 1
 
         elif not board.has_valid_position():
             return 1 / 2
+
+    def best_uct_rave(self, node: Node):
+        uct_rave_of_children = np.array(
+            list([self.get_uct_rave(child) for child in node.children])
+        )
+
+        best_index = np.argmax(uct_rave_of_children)
+        return node.children[best_index]
+
+    def get_uct_rave(self, node: Node):
+        plays_rave = self.plays_rave
+        wins_rave = self.wins_rave
+        move = node.position
+        res = (
+            (1 - np.sqrt(self.equivalence / (3 * plays_rave[move] + self.equivalence)))
+            * (node.num_win / node.num_visited)
+            + np.sqrt(self.equivalence / (3 * plays_rave[move] + self.equivalence))
+            * (wins_rave[move][node.board.player] / plays_rave[move])
+            + np.sqrt(self.confident * np.log(plays_rave[move]) / node.num_visited)
+        )
+
+        return res

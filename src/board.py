@@ -14,6 +14,14 @@ class Board:
             for j in range(size):
                 self.valid_position.append((i, j))
 
+        self.player = 0
+
+    def print_board(self):
+        for i in range(self.size):
+            for j in range(self.size):
+                print(str(self.board_matrix[i][j]) + "   ", end="")
+            print("\n")
+
     def set_board_matrix(self, mat):
         self.board_matrix = mat.copy()
 
@@ -34,6 +42,19 @@ class Board:
     def has_neighbor(self, position: tuple, radius):
         x = position[0]
         y = position[1]
+        board = self.board_matrix
+        start_x, end_x = (x - radius), (x + radius)
+        start_y, end_y = (y - radius), (y + radius)
+
+        for i in range(start_x, end_x + 1):
+            for j in range(start_y, end_y + 1):
+                if 0 <= i < self.size and 0 <= j < self.size:
+                    if board[i][j] == 1 or board[i][j] == -1:
+                        return True
+        return False
+
+    def has_neighbor_origin(self, x, y, radius):
+
         board = self.board_matrix
         start_x, end_x = (x - radius), (x + radius)
         start_y, end_y = (y - radius), (y + radius)
@@ -114,13 +135,6 @@ class Board:
                 if count >= 5:
                     return True
         return False
-
-    def reset(self):
-        self.board_matrix = np.zeros((self.size, self.size), dtype=np.int)
-        self.valid_position = [
-            (i, j) for i in range(self.size) for j in range(self.size)
-        ]
-        self.last_position = None
 
     # def cal_score(self, x, y):
     #     shape_score = {(0, 1, 1, 0, 0): 50,
