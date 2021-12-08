@@ -52,6 +52,9 @@ class AIPlayer(Player):
 
     @classmethod
     def get_ai_solution(cls, board, computational_power=50000):
+        if np.count_nonzero(board.board_matrix == 0) == 0:
+            return
+
         if np.all((board.board_matrix == 0)):
             x, y = board.board_matrix.shape
             return int(x >> 1), int(y >> 1)
@@ -86,9 +89,10 @@ class AIPlayer(Player):
                 AIPlayer.get_ai_solution, board, self.computational_power
             )
             pos = future.result()
-
-        action_done, is_end = self.board_controller.move_in_position(
-            position=pos, player_flag=self.mat_flag
-        )
-
+        if pos:
+            action_done, is_end = self.board_controller.move_in_position(
+                position=pos, player_flag=self.mat_flag
+            )
+        else:
+            return True, True
         return action_done, is_end

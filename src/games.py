@@ -20,7 +20,8 @@ def update_by_pc(mat, mat_flag=1):
     board = Board(size=max(mat.shape))
     board.set_board_matrix(mat)
     pos = AIPlayer.get_ai_solution(board)
-    mat[pos[0], pos[1]] = mat_flag
+    if pos:
+        mat[pos[0], pos[1]] = mat_flag
     return mat
 
 
@@ -47,6 +48,9 @@ class Game:
         self.board.player = self.current_player.mat_flag
 
         # init ai player
+        self.ai_player_1 = AIPlayer(mat_flag=1, computational_power=1000)
+        self.ai_player_1.set_board_controller(self.board_controller)
+
         self.ai_player = AIPlayer(mat_flag=-1, computational_power=1000)
         self.ai_player.set_board_controller(self.board_controller)
 
@@ -59,22 +63,23 @@ class Game:
 
     def start_looper(self):
         while not self.done:
-            event = pygame.event.wait()
-            if event.type == pygame.QUIT:
-                self.done = True
-                exit()
-            if event.type in [pygame.MOUSEBUTTONDOWN] and not (self.turn % 2):
-                ###it is player 1 turn
-                action_done, self.done = self.current_player.do_action(event)
-                if not action_done:
-                    continue
-                self.turn += 1
-                ###it is player 1 turn end
+            # event = pygame.event.wait()
+            # if event.type == pygame.QUIT:
+            #     self.done = True
+            #     exit()
+            # if event.type in [pygame.MOUSEBUTTONDOWN] and not (self.turn % 2):
+            ###it is player 1 turn
+            # action_done, self.done = self.current_player.do_action(event)
+            # if not action_done:
+            #     continue
+            _, self.done = self.ai_player_1.do_action()
+            self.turn += 1
+            ###it is player 1 turn end
 
-                ### it is ai player turn
-                _, self.done = self.ai_player.do_action()
-                self.turn += 1
-                ###it is player 2 turn end
+            ### it is ai player turn
+            _, self.done = self.ai_player.do_action()
+            self.turn += 1
+            ###it is player 2 turn end
 
             if self.done:
                 self.show_endgame_dialog()
@@ -92,7 +97,7 @@ class Game:
     def show_endgame_dialog(self):
         retry = tkinter.messagebox.askretrycancel(
             "Game Over",
-            f"Winner is {self.get_player_name(self.turn)}. Do you want to try again?",
+            f"Do you want to try again?",
         )
         if retry:
             self.reset()
